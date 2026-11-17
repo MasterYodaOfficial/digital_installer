@@ -1,3 +1,4 @@
+import { formatCoordinate } from '../utils/coordinates';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -78,8 +79,8 @@ export default function AddWorkPage() {
         const fd = new FormData();
         fd.append('photo', photo);
         if (photoMeta?.captured_at) fd.append('captured_at', photoMeta.captured_at);
-        if (photoMeta?.latitude != null) fd.append('latitude', photoMeta.latitude);
-        if (photoMeta?.longitude != null) fd.append('longitude', photoMeta.longitude);
+        if (photoMeta?.latitude != null) fd.append('latitude', formatCoordinate(photoMeta.latitude));
+        if (photoMeta?.longitude != null) fd.append('longitude', formatCoordinate(photoMeta.longitude));
         await worksApi.addPhoto(work.id, fd);
       }
 

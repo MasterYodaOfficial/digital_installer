@@ -1,3 +1,4 @@
+import { formatCoordinate } from '../utils/coordinates';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -72,8 +73,8 @@ export default function ClockInPage() {
     if (photoMeta?.captured_at) formData.append('captured_at', photoMeta.captured_at);
     const lat = photoMeta?.latitude ?? position?.latitude;
     const lng = photoMeta?.longitude ?? position?.longitude;
-    if (lat != null) formData.append('latitude', lat);
-    if (lng != null) formData.append('longitude', lng);
+    if (lat != null) formData.append('latitude', formatCoordinate(lat));
+    if (lng != null) formData.append('longitude', formatCoordinate(lng));
     selected.forEach((id) => formData.append('workers_present', id));
     try {
       await workdayApi.clockIn(formData);

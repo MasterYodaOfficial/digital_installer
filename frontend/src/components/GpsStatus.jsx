@@ -1,3 +1,4 @@
+import { formatCoordinate } from '../utils/coordinates';
 import { useState, useEffect, useCallback } from 'react';
 import { Chip } from '@mui/material';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
@@ -17,8 +18,8 @@ export function useGps() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setPosition({
-          latitude: pos.coords.latitude.toFixed(6),
-          longitude: pos.coords.longitude.toFixed(6),
+          latitude: formatCoordinate(pos.coords.latitude),
+          longitude: formatCoordinate(pos.coords.longitude),
         });
         setLoading(false);
       },

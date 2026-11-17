@@ -1,3 +1,4 @@
+import { formatCoordinate } from '../utils/coordinates';
 import { useState, useRef } from 'react';
 import { Button, Box, Typography, CircularProgress } from '@mui/material';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
@@ -102,8 +103,8 @@ export default function PhotoCapture({ onPhoto, label = 'Сделать фото
       }
 
       const capturedAt = new Date().toISOString();
-      const latitude = pos ? pos.coords.latitude : null;
-      const longitude = pos ? pos.coords.longitude : null;
+      const latitude = formatCoordinate(pos?.coords.latitude);
+      const longitude = formatCoordinate(pos?.coords.longitude);
 
       const stamped = await stampImage(file, capturedAt, latitude, longitude);
 

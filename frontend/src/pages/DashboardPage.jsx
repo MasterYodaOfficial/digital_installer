@@ -1,3 +1,4 @@
+import { formatCoordinate } from '../utils/coordinates';
 import { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import {
@@ -24,30 +25,45 @@ export default function DashboardPage() {
   const [gpsSubmitting, setGpsSubmitting] = useState(false);
   const [gpsMsg, setGpsMsg] = useState('');
   const [role, setRole] = useState(null);
+  const [profileError, setProfileError] = useState('');
 
   useEffect(() => {
-    authApi.me().then((r) => setRole(r.data?.role)).catch(() => {});
+    let active = true;
+    authApi.me()
+      .then((r) => { if (active) setRole(r.data.role); })
+      .catch((err) => {
+        if (active) setProfileError(getApiErrorMessage(err, 'Не удалось загрузить профиль'));
+      });
+    return () => { active = false; };
   }, []);
 
   const isShiftRole = role === 'foreman' || role === 'worker';
   const isForeman = role === 'foreman';
 
   useEffect(() => {
+    if (role === null) return;
     if (!isShiftRole) {
       setLoading(false);
       return;
     }
+    let active = true;
+    setLoading(true);
+    setError('');
     workdayApi.current()
-      .then((r) => setWorkday(r.data))
+      .then((r) => { if (active) setWorkday(r.data); })
       .catch((err) => {
+        if (!active) return;
         if (err.response?.status === 404) setWorkday(null);
         else setError(getApiErrorMessage(err, 'Не удалось загрузить данные смены'));
       })
-      .finally(() => setLoading(false));
+      .finally(() => { if (active) setLoading(false); });
     worksApi.myAssignments()
-      .then((r) => setMyCount((r.data || []).filter((w) => w.status !== 'completed').length))
+      .then((r) => {
+        if (active) setMyCount((r.data || []).filter((w) => w.status !== 'completed').length);
+      })
       .catch(() => {});
-  }, []);
+    return () => { active = false; };
+  }, [role, isShiftRole]);
 
   const sendGpsCheck = () => {
     if (!workday) return;
@@ -58,8 +74,8 @@ export default function DashboardPage() {
       async (pos) => {
         try {
           await workdayApi.gpsCheckSubmit(workday.id, {
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
+            latitude: formatCoordinate(pos.coords.latitude),
+            longitude: formatCoordinate(pos.coords.longitude),
             captured_at: new Date().toISOString(),
           });
           setGpsMsg('GPS отправлен');
@@ -74,12 +90,15 @@ export default function DashboardPage() {
     );
   };
 
+  if (profileError) return <Alert severity="error">{profileError}</Alert>;
   if (loading || role === null) return <Box sx={{ textAlign: 'center', mt: 8 }}><CircularProgress /></Box>;
 
   // Не «сменные» роли — отдаём свой дашборд
   if (role === 'project_manager') return <Navigate to="/dashboard/pm" replace />;
   if (role === 'director' || role === 'administrator') return <Navigate to="/dashboard/director" replace />;
   if (role === 'support_manager' || role === 'accountant') return <Navigate to="/reports" replace />;
+
+  if (error) return <Alert severity="error">{error}</Alert>;
 
   // Нет открытой смены
   if (!workday) {
