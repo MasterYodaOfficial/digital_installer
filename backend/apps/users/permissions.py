@@ -14,6 +14,14 @@ def manageable_user_roles(user):
     return set()
 
 
+def can_edit_user(actor, target):
+    """Единая проверка для API и отображения доступных действий в интерфейсе."""
+    if actor.is_superuser and actor.role == RoleCode.ADMINISTRATOR:
+        return True
+    return (target.pk != actor.pk and not target.is_superuser and not target.is_staff
+            and target.role in manageable_user_roles(actor))
+
+
 class CanManageUsers(BasePermission):
     def has_permission(self, request, view):
         user = request.user
@@ -26,8 +34,7 @@ class CanManageUsers(BasePermission):
             return True
         if request.method in ("GET", "HEAD", "OPTIONS"):
             return True
-        return (obj.pk != user.pk and not obj.is_superuser and not obj.is_staff
-                and obj.role in manageable_user_roles(user))
+        return can_edit_user(user, obj)
 
 
 class IsDirectorOrProjectManager(BasePermission):

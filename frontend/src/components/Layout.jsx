@@ -11,6 +11,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import LogoutIcon from '@mui/icons-material/Logout';
+import PeopleIcon from '@mui/icons-material/People';
 import CloudOffIcon from '@mui/icons-material/CloudOff';
 import SyncIcon from '@mui/icons-material/Sync';
 import { authApi } from '../api';
@@ -44,6 +45,9 @@ export default function Layout() {
 
   const navItems = useMemo(() => {
     const items = [];
+    if (user?.manageable_roles?.length) {
+      items.push({ label: 'Сотрудники', icon: <PeopleIcon />, path: '/users' });
+    }
     const isShiftUser = user && (user.role === 'foreman' || user.role === 'worker');
     if (isShiftUser) {
       items.push({ label: 'Главная', icon: <HomeIcon />, path: '/' });
@@ -113,7 +117,7 @@ export default function Layout() {
 
       {!isOnline && (
         <Box sx={{ bgcolor: 'warning.light', px: 2, py: 0.5, textAlign: 'center', fontSize: 13 }}>
-          Нет сети. Данные сохраняются локально.
+          Нет сети. Для сохранения требуется подключение к серверу.
         </Box>
       )}
 

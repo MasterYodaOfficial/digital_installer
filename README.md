@@ -16,6 +16,8 @@
 
 ## Локальный запуск
 
+Рекомендуемый изолированный вариант: [локальная PostgreSQL и демонстрационные учётные записи](docs/local-development.md).
+
 1. Создайте виртуальное окружение Python и установите `backend/requirements.txt`.
 2. Скопируйте `.env.example` в `.env`, задайте локальные параметры PostgreSQL и секретный ключ. Не публикуйте `.env`.
 3. Из `backend` выполните `python manage.py migrate`, `python manage.py createsuperuser`, `python manage.py runserver`.

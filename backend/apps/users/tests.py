@@ -2,10 +2,32 @@ from django.test import TestCase
 from rest_framework.test import APIRequestFactory, force_authenticate
 
 from .models import RoleCode, User
-from .views import UserAdminViewSet
+from .views import CurrentUserView, UserAdminViewSet
 
 
 class UserManagementTests(TestCase):
+    def test_profile_exposes_only_assignable_roles(self):
+        request = self.factory.get('/api/auth/me/')
+        force_authenticate(request, user=self.pm)
+        response = CurrentUserView.as_view()(request)
+        self.assertEqual({r['value'] for r in response.data['manageable_roles']}, {RoleCode.FOREMAN, RoleCode.WORKER})
+
+    def test_list_marks_protected_accounts_read_only(self):
+        request = self.factory.get('/api/admin/users/')
+        force_authenticate(request, user=self.pm)
+        response = UserAdminViewSet.as_view({'get': 'list'})(request)
+        editable = {row['id']: row['can_edit'] for row in response.data}
+        self.assertTrue(editable[self.worker.pk])
+        self.assertFalse(editable[self.pm.pk])
+        self.assertFalse(editable[self.technical.pk])
+
+    def test_new_password_allows_login_and_is_not_returned(self):
+        response = self.call(self.pm, 'post', {'username': 'new_login', 'password': 'LocalTest-4821'})
+        self.assertEqual(response.status_code, 201)
+        self.assertNotIn('password', response.data)
+        user = User.objects.get(username='new_login')
+        self.assertTrue(user.check_password('LocalTest-4821'))
+
     def setUp(self):
         self.factory = APIRequestFactory()
         self.pm = User.objects.create_user(username="pm", role=RoleCode.PROJECT_MANAGER)

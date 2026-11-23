@@ -21,6 +21,9 @@ build/
 /backend/media/
 *.log
 local_settings.py
+!backend/config/local_settings.py
+/backend/local-media/
+/.local/
 
 # Node / frontend
 node_modules/

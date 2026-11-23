@@ -1,0 +1,19 @@
+# Только локальная PostgreSQL. Рабочий VPS этим файлом не управляется.
+services:
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "127.0.0.1:55432:5432"
+    environment:
+      POSTGRES_DB: digital_installer_local
+      POSTGRES_USER: digital_local
+      POSTGRES_PASSWORD: ${LOCAL_POSTGRES_PASSWORD:?Set LOCAL_POSTGRES_PASSWORD in .env}
+    volumes:
+      - local_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U digital_local -d digital_installer_local"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+volumes:
+  local_postgres:

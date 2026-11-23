@@ -19,6 +19,7 @@ import DashboardDirectorPage from "./pages/DashboardDirectorPage";
 import DashboardMasterPage from "./pages/DashboardMasterPage";
 import DashboardPMPage from "./pages/DashboardPMPage";
 import ObjectProgressPage from "./pages/ObjectProgressPage";
+import UsersPage from "./pages/UsersPage";
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
         }
       >
         <Route path="/" element={<DashboardPage />} />
+        <Route path="/users" element={<UsersPage />} />
         <Route path="/clock-in" element={<ClockInPage />} />
         <Route path="/clock-out" element={<ClockOutPage />} />
         <Route path="/equipment" element={<EquipmentPage />} />

@@ -1,10 +1,16 @@
 from rest_framework import serializers
 
-from .models import Brigade, User
-from .permissions import manageable_user_roles
+from .models import Brigade, RoleCode, User
+from .permissions import can_edit_user, manageable_user_roles
 
 
 class CurrentUserSerializer(serializers.ModelSerializer):
+    manageable_roles = serializers.SerializerMethodField()
+
+    def get_manageable_roles(self, obj):
+        allowed = manageable_user_roles(obj)
+        return [{"value": value, "label": label} for value, label in RoleCode.choices if value in allowed]
+
     class Meta:
         model = User
         fields = (
@@ -16,11 +22,16 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             "phone",
             "status",
             "role",
+            "manageable_roles",
         )
 
 
 class UserAdminSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, allow_blank=False)
+    can_edit = serializers.SerializerMethodField()
+
+    def get_can_edit(self, obj):
+        return can_edit_user(self.context["request"].user, obj)
 
     def validate(self, attrs):
         actor = self.context["request"].user
@@ -42,6 +53,7 @@ class UserAdminSerializer(serializers.ModelSerializer):
             "role",
             "is_active",
             "password",
+            "can_edit",
         )
         read_only_fields = ("id",)
 

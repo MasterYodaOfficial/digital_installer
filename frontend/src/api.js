@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { enqueueRequest } from './sync';
 
 function resolveApiBaseUrl() {
   const configured = import.meta.env.VITE_API_URL;
@@ -86,7 +85,7 @@ api.interceptors.response.use(
     const original = error.config;
 
     // Refresh token
-    if (error.response?.status === 401 && !original._retry) {
+    if (error.response?.status === 401 && original && !original._retry) {
       original._retry = true;
       const refresh = localStorage.getItem('refresh_token');
       if (refresh) {
@@ -105,17 +104,7 @@ api.interceptors.response.use(
       }
     }
 
-    // Офлайн: сохранить POST/PATCH/DELETE в очередь
-    if (!error.response && error.code === 'ERR_NETWORK' && original.method !== 'get') {
-      const hasFile = original.headers?.['Content-Type']?.includes('multipart');
-      await enqueueRequest(original.method, original.url, original.data, hasFile);
-      // Вернуть "успех" чтобы UI не ломался
-      return {
-        data: { _offline: true, _message: 'Сохранено офлайн. Будет отправлено при восстановлении сети.' },
-        status: 202,
-        _offline: true,
-      };
-    }
+    // В режиме работы с сетью успешным считается только ответ сервера.
 
     return Promise.reject(error);
   }
@@ -126,6 +115,12 @@ export const authApi = {
   login: (username, password) =>
     api.post('/auth/token/', { username, password }),
   me: () => api.get('/auth/me/'),
+};
+
+export const usersApi = {
+  list: (params) => api.get('/admin/users/', { params }),
+  create: (data) => api.post('/admin/users/', data),
+  update: (id, data) => api.patch(`/admin/users/${id}/`, data),
 };
 
 // --- Workday ---
