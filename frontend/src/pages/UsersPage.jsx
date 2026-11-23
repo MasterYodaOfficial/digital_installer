@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Alert, Box, Button, Card, CardContent, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material';
 import { authApi, getApiErrorMessage, usersApi } from '../api';
 
 const emptyForm = { username: '', first_name: '', last_name: '', phone: '', email: '', role: 'worker', password: '' };
+const roleLabels = { director: 'Директор', administrator: 'Администратор', accountant: 'Бухгалтер', designer: 'Проектировщик', support_manager: 'Менеджер по сопровождению', customer: 'Заказчик', project_manager: 'Руководитель проекта', foreman: 'Мастер', worker: 'Монтажник' };
 
 /** Рабочий кабинет сотрудников. Сервер определяет допустимые роли и действия. */
 export default function UsersPage() {
@@ -63,20 +64,36 @@ export default function UsersPage() {
   if (!profile) return error ? <Alert severity="error">{error}</Alert> : <CircularProgress aria-label="Загрузка профиля" />;
   if (!profile.manageable_roles?.length) return <Alert severity="warning">Управление сотрудниками недоступно для вашей роли.</Alert>;
   return <Stack spacing={2}>
-    <Typography variant="h5">Сотрудники</Typography>
-    <Button variant="contained" onClick={() => open()}>Добавить сотрудника</Button>
+    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ sm: 'center' }}>
+      <Typography variant="h5">Сотрудники</Typography>
+      <Button variant="contained" onClick={() => open()}>Добавить сотрудника</Button>
+    </Stack>
     <TextField label="Поиск по имени, логину или телефону" value={search} onChange={(e) => setSearch(e.target.value)} />
     {message && <Alert severity="success" onClose={() => setMessage('')}>{message}</Alert>}
     {error && <Alert severity="error">{error}</Alert>}
-    {loading ? <CircularProgress aria-label="Загрузка сотрудников" /> : rows.length === 0 ? <Typography>Сотрудники не найдены</Typography> : rows.map((user) => <Card key={user.id}><CardContent>
-      <Typography variant="h6">{`${user.last_name} ${user.first_name}`.trim() || user.username}</Typography>
-      <Typography color="text.secondary">{user.username}{user.phone ? ` · ${user.phone}` : ''}</Typography>
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 1, flexWrap: 'wrap' }}>
-        <Chip label={profile.manageable_roles.find((r) => r.value === user.role)?.label ?? ({ director: 'Директор', administrator: 'Администратор', accountant: 'Бухгалтер', designer: 'Проектировщик', support_manager: 'Менеджер по сопровождению', customer: 'Заказчик', project_manager: 'Руководитель проекта' }[user.role] || user.role)} size="small" />
-        {!user.is_active && <Chip label="Вход отключён" size="small" />}
-        {user.can_edit && <Button onClick={() => open(user)}>Редактировать</Button>}
-      </Box>
-    </CardContent></Card>)}
+    <Typography variant="body2" color="text.secondary">Найдено: {loading ? '…' : rows.length}. Изменения — через кнопку в строке сотрудника.</Typography>
+    <TableContainer component={Paper} variant="outlined" tabIndex={0} aria-label="Список сотрудников, на узком экране прокручивается по горизонтали" sx={{ maxHeight: '65vh', borderRadius: 1 }}>
+      <Table size="small" stickyHeader aria-label="Сотрудники" sx={{ minWidth: 1000, '& th, & td': { borderRight: '1px solid', borderRightColor: 'divider', py: 1 }, '& th': { fontWeight: 700, bgcolor: 'grey.100', whiteSpace: 'nowrap' } }}>
+        <TableHead><TableRow>
+          {['№', 'Фамилия', 'Имя', 'Логин', 'Должность', 'Телефон', 'Электронная почта', 'Вход', 'Действия'].map((label) => <TableCell key={label}>{label}</TableCell>)}
+        </TableRow></TableHead>
+        <TableBody>
+          {loading ? <TableRow><TableCell colSpan={9} align="center"><CircularProgress size={24} aria-label="Загрузка сотрудников" /></TableCell></TableRow>
+            : rows.length === 0 ? <TableRow><TableCell colSpan={9} align="center">Сотрудники не найдены</TableCell></TableRow>
+              : rows.map((user, index) => <TableRow key={user.id} hover sx={{ bgcolor: index % 2 ? 'grey.50' : 'background.paper' }}>
+                <TableCell>{index + 1}</TableCell>
+                <TableCell>{user.last_name || '—'}</TableCell>
+                <TableCell>{user.first_name || '—'}</TableCell>
+                <TableCell>{user.username}</TableCell>
+                <TableCell>{roleLabels[user.role] || user.role}</TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap' }}>{user.phone || '—'}</TableCell>
+                <TableCell sx={{ overflowWrap: 'anywhere' }}>{user.email || '—'}</TableCell>
+                <TableCell><Chip size="small" variant="outlined" color={user.is_active ? 'success' : 'default'} label={user.is_active ? 'Разрешён' : 'Отключён'} /></TableCell>
+                <TableCell>{user.can_edit ? <Button size="small" onClick={() => open(user)}>Редактировать</Button> : <Typography variant="caption" color="text.secondary">Только просмотр</Typography>}</TableCell>
+              </TableRow>)}
+        </TableBody>
+      </Table>
+    </TableContainer>
     <Dialog open={editing !== undefined} onClose={() => { if (!saving) setEditing(undefined); }} fullWidth maxWidth="sm">
       <Box component="form" onSubmit={save}>
         <DialogTitle>{editing ? 'Редактирование сотрудника' : 'Новый сотрудник'}</DialogTitle>

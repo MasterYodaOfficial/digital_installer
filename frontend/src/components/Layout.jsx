@@ -45,18 +45,18 @@ export default function Layout() {
 
   const navItems = useMemo(() => {
     const items = [];
-    if (user?.manageable_roles?.length) {
-      items.push({ label: 'Сотрудники', icon: <PeopleIcon />, path: '/users' });
-    }
     const isShiftUser = user && (user.role === 'foreman' || user.role === 'worker');
     if (isShiftUser) {
       items.push({ label: 'Главная', icon: <HomeIcon />, path: '/' });
       items.push({ label: 'Смена', icon: <WorkIcon />, path: '/clock-in' });
     }
     if (user && user.role === 'project_manager') {
-      items.push({ label: 'Мои объекты', icon: <DashboardIcon />, path: '/dashboard/pm' });
+      items.push({ label: 'Дашборд', icon: <DashboardIcon />, path: '/dashboard/pm' });
     } else if (user && DIRECTOR_DASH_ROLES.includes(user.role)) {
       items.push({ label: 'Дашборд', icon: <DashboardIcon />, path: '/dashboard/director' });
+    }
+    if (user?.manageable_roles?.length) {
+      items.push({ label: 'Сотрудники', icon: <PeopleIcon />, path: '/users' });
     }
     if (user && user.role === 'foreman') {
       items.push({ label: 'Бригада', icon: <DashboardIcon />, path: '/dashboard/master' });
@@ -121,7 +121,7 @@ export default function Layout() {
         </Box>
       )}
 
-      <Box sx={{ p: 2, maxWidth: 600, mx: 'auto' }}>
+      <Box sx={{ p: { xs: 1.5, sm: 2 }, maxWidth: location.pathname === '/users' ? 1280 : 600, mx: 'auto' }}>
         <Outlet />
       </Box>
 
