@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from .models import Brigade, User
+from .permissions import manageable_user_roles
 
 
 class CurrentUserSerializer(serializers.ModelSerializer):
@@ -20,6 +21,13 @@ class CurrentUserSerializer(serializers.ModelSerializer):
 
 class UserAdminSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, allow_blank=False)
+
+    def validate(self, attrs):
+        actor = self.context["request"].user
+        role = attrs.get("role", self.instance.role if self.instance else User._meta.get_field("role").default)
+        if role not in manageable_user_roles(actor):
+            raise serializers.ValidationError({"role": "Вы не можете назначить эту роль."})
+        return attrs
 
     class Meta:
         model = User

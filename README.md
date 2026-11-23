@@ -1,62 +1,44 @@
-# Digital Installer
+# Цифровой монтажник
 
-Базовая инициализация проекта для этапа 1:
-- Backend: Django + DRF + JWT
-- База: PostgreSQL
-- Frontend: React (Vite)
-- Пользователи: кастомная модель `User` с ролевой моделью RBAC
+Веб-приложение для учёта смен, посещений объектов и работы бригад. Проект развивается; наличие страницы не означает завершённую приёмку функции.
 
 ## Структура
-- `backend/` — API и бизнес-логика
-- `frontend/` — клиентская часть
-- `documentation/` — этапы и описание проекта
 
-## Быстрый старт
+- `backend/` — Django, DRF, JWT, PostgreSQL.
+- `backend/apps/users/` — сотрудники, роли и бригады.
+- `backend/apps/objects/` — объекты, стадии, документы и планы.
+- `backend/apps/pricing/` — расценки и группы работ.
+- `backend/apps/workday/` — смены, посещения, работы и отчёты.
+- `frontend/` — React, Vite, Material UI, инфраструктура PWA.
+- `docs/` — техническая документация.
 
-1. Подготовка окружения:
-   - Скопируйте `.env.example` в `.env`
-   - Установите и запустите PostgreSQL (локально или в облаке)
+План функций: [TODO.md](TODO.md). Изменения: [CHANGELOG.md](CHANGELOG.md). Правила доработок: [CONTRIBUTING.md](CONTRIBUTING.md).
 
-2. Backend:
-   - `python3 -m venv .venv`
-   - `.venv/bin/pip install -r backend/requirements.txt`
-   - `cd backend`
-   - `../.venv/bin/python manage.py migrate`
-   - `../.venv/bin/python manage.py createsuperuser`
-   - `../.venv/bin/python manage.py runserver`
+## Локальный запуск
 
-3. Frontend:
-   - `cd frontend`
-   - `npm install`
-   - `npm run dev`
+1. Создайте виртуальное окружение Python и установите `backend/requirements.txt`.
+2. Скопируйте `.env.example` в `.env`, задайте локальные параметры PostgreSQL и секретный ключ. Не публикуйте `.env`.
+3. Из `backend` выполните `python manage.py migrate`, `python manage.py createsuperuser`, `python manage.py runserver`.
+4. Из `frontend` выполните `npm ci` и `npm run dev`.
 
-## API (этап 1-2)
-- `GET /api/health/` — healthcheck
-- `POST /api/auth/token/` — получить JWT (`access`, `refresh`)
-- `POST /api/auth/token/refresh/` — обновить `access`
-- `GET /api/auth/me/` — профиль текущего пользователя
-- `GET/POST /api/admin/users/` — список/создание пользователей
-- `GET/PATCH/DELETE /api/admin/users/{id}/` — управление пользователем
-- `GET/POST /api/admin/brigades/` — список/создание бригад
-- `GET/PATCH/DELETE /api/admin/brigades/{id}/` — управление бригадой
-- `GET/POST /api/admin/settings/` — базовые настройки (ключ-значение)
-- `GET/POST /api/admin/pricelists/` — CRUD баз расценок
-- `GET/PATCH/DELETE /api/admin/pricelists/{id}/` — управление базой расценок
-- `GET/POST /api/admin/pricelist-items/` — CRUD позиций расценок
-- `GET/PATCH/DELETE /api/admin/pricelist-items/{id}/` — управление позицией расценки
-- `GET/POST /api/admin/objects/` — простой CRUD объектов (название + база расценок)
-- `GET/PATCH/DELETE /api/admin/objects/{id}/` — управление объектом
-- `POST /api/admin/pricelists/import/` — заглушка импорта (501)
-- `GET /api/admin/pricelists/export/` — заглушка экспорта (501)
+Python виртуального окружения из корня: `.venv/Scripts/python.exe` в Windows, `.venv/bin/python` в Linux.
 
-## RBAC (базовые роли)
-Роли в `apps.users.models.RoleCode`:
-- `administrator`
-- `director`
-- `project_manager`
-- `foreman`
-- `worker`
-- `support_manager`
-- `designer`
-- `customer`
-- `accountant`
+## Проверка
+
+Из `backend` с Python виртуального окружения:
+
+```text
+python manage.py test apps.users --settings=config.test_settings
+```
+
+Тесты используют SQLite в памяти и не требуют рабочих данных. Эти настройки нельзя использовать на рабочем сервере. Для изменений моделей нужна также проверка PostgreSQL.
+
+## Ограничения
+
+Полноценный офлайн пока не готов. Права необходимо проверять на сервере, а не только скрывать кнопки. `scripts/setup-server.sh` — первоначальная установка с изменением настроек БД и служб, не команда обновления.
+
+Смена Git remote не обновляет опубликованную сборку. Выкладка выполняется отдельно с резервированием и проверкой.
+
+## Документация функций
+
+- [Управление пользователями](docs/user-management.md).

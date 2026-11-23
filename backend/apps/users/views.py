@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Brigade, User
-from .permissions import IsAdminScope
+from .permissions import CanManageUsers, IsAdminScope
 from .serializers import BrigadeSerializer, CurrentUserSerializer, UserAdminSerializer
 
 
@@ -19,7 +19,7 @@ class CurrentUserView(APIView):
 
 class UserAdminViewSet(viewsets.ModelViewSet):
     serializer_class = UserAdminSerializer
-    permission_classes = [IsAuthenticated, IsAdminScope]
+    permission_classes = [IsAuthenticated, CanManageUsers]
 
     def get_queryset(self):
         queryset = User.objects.order_by("id")

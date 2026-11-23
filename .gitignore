@@ -57,6 +57,13 @@ htmlcov/
 
 # Документация (исходники, не для репо)
 documentation/
+.claude/
+.codex/
+.agents/
+digital_installer_audit_*.md
+digital-installer-diagnostics-*.md
+/*.docx
+/*.xlsx
 
 # Временные и прочее
 *.bak
