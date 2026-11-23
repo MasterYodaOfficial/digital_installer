@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Brigade, RoleCode, User
+from .models import Brigade, RoleCode, User, UserStatus
 from .permissions import can_edit_user, manageable_user_roles
 
 
@@ -38,6 +38,16 @@ class UserAdminSerializer(serializers.ModelSerializer):
         role = attrs.get("role", self.instance.role if self.instance else User._meta.get_field("role").default)
         if role not in manageable_user_roles(actor):
             raise serializers.ValidationError({"role": "Вы не можете назначить эту роль."})
+        target_status = attrs.get('status', self.instance.status if self.instance else UserStatus.ACTIVE)
+        if 'status' in attrs:
+            attrs['is_active'] = target_status == UserStatus.ACTIVE
+        elif target_status != UserStatus.ACTIVE:
+            attrs['is_active'] = False
+        if self.instance and attrs.get('status') == UserStatus.DISMISSED:
+            from django.db.models import Q
+            from apps.workday.models import WorkDay, WorkDayStatus
+            if WorkDay.objects.filter(Q(foreman=self.instance) | Q(workers_present=self.instance), status=WorkDayStatus.OPEN).exists():
+                raise serializers.ValidationError({'status': 'Сотрудник участвует в открытой смене. Сначала закройте смену.'})
         return attrs
 
     class Meta:

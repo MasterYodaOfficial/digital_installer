@@ -293,6 +293,15 @@ class ClockInSerializer(_PhotoCaptureBaseSerializer):
         child=serializers.IntegerField(), required=False, default=list,
     )
 
+    def validate_workers_present(self, value):
+        """Не допускает уволенных, заблокированных и неизвестных сотрудников в новую смену."""
+        from apps.users.models import User, UserStatus
+
+        available = User.objects.filter(pk__in=value, is_active=True, status=UserStatus.ACTIVE)
+        if available.count() != len(set(value)):
+            raise serializers.ValidationError('В составе есть недоступные сотрудники. Обновите список.')
+        return value
+
 
 class ClockOutSerializer(_PhotoCaptureBaseSerializer):
     pass

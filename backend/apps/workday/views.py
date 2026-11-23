@@ -81,7 +81,7 @@ class WorkDayViewSet(GenericViewSet):
         if not brigade:
             return Response({"error": "Вы не состоите ни в одной бригаде."}, status=status.HTTP_404_NOT_FOUND)
 
-        members = brigade.members.all()
+        members = brigade.members.filter(is_active=True, status='active')
         return Response({
             "id": brigade.id,
             "name": brigade.name,

@@ -21,11 +21,20 @@ class UserAdminViewSet(viewsets.ModelViewSet):
     serializer_class = UserAdminSerializer
     permission_classes = [IsAuthenticated, CanManageUsers]
 
+    def destroy(self, request, *args, **kwargs):
+        self.get_object()  # Проверить права до ответа, не раскрывая чужую запись.
+        return Response({'detail': 'Удаление отключено. Переместите сотрудника в архив, чтобы сохранить историю.'}, status=405)
+
     def get_queryset(self):
         queryset = User.objects.order_by("id")
         status_value = self.request.query_params.get("status")
         role_code = self.request.query_params.get("role")
         search = self.request.query_params.get("search")
+        archived = self.request.query_params.get('archived')
+        if archived == 'true':
+            queryset = queryset.filter(status='dismissed')
+        elif archived == 'false':
+            queryset = queryset.exclude(status='dismissed')
 
         if status_value:
             queryset = queryset.filter(status=status_value)

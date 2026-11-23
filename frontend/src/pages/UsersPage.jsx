@@ -17,6 +17,9 @@ export default function UsersPage() {
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [archived, setArchived] = useState(false);
+  const [archiveTarget, setArchiveTarget] = useState(null);
+  const [archiveError, setArchiveError] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -31,13 +34,26 @@ export default function UsersPage() {
     let active = true;
     setLoading(true);
     const timer = setTimeout(() => {
-      usersApi.list({ search }).then(({ data }) => {
+      usersApi.list({ search, archived }).then(({ data }) => {
         if (active) { setRows(data.results ?? data); setError(''); }
       }).catch((e) => { if (active) setError(getApiErrorMessage(e)); })
         .finally(() => { if (active) setLoading(false); });
     }, 250);
     return () => { active = false; clearTimeout(timer); };
-  }, [profile, search]);
+  }, [profile, search, archived]);
+
+  const changeArchive = async () => {
+    if (saving) return;
+    setSaving(true); setArchiveError('');
+    try {
+      const restore = archiveTarget.status === 'dismissed';
+      await usersApi.update(archiveTarget.id, { status: restore ? 'active' : 'dismissed' });
+      setArchiveTarget(null);
+      setMessage(restore ? 'Сотрудник восстановлен, вход разрешён' : 'Сотрудник перемещён в архив, вход отключён');
+      setProfile((current) => ({ ...current }));
+    } catch (e) { setArchiveError(getApiErrorMessage(e)); }
+    finally { setSaving(false); }
+  };
 
   const open = (user = null) => {
     setEditing(user);
@@ -69,6 +85,10 @@ export default function UsersPage() {
       <Button variant="contained" onClick={() => open()}>Добавить сотрудника</Button>
     </Stack>
     <TextField label="Поиск по имени, логину или телефону" value={search} onChange={(e) => setSearch(e.target.value)} />
+    <TextField select label="Список" value={archived ? 'archive' : 'current'} onChange={(e) => setArchived(e.target.value === 'archive')} sx={{ maxWidth: 300 }}>
+      <MenuItem value="current">Действующие сотрудники</MenuItem>
+      <MenuItem value="archive">Архив (уволенные)</MenuItem>
+    </TextField>
     {message && <Alert severity="success" onClose={() => setMessage('')}>{message}</Alert>}
     {error && <Alert severity="error">{error}</Alert>}
     <Typography variant="body2" color="text.secondary">Найдено: {loading ? '…' : rows.length}. Изменения — через кнопку в строке сотрудника.</Typography>
@@ -88,8 +108,11 @@ export default function UsersPage() {
                 <TableCell>{roleLabels[user.role] || user.role}</TableCell>
                 <TableCell sx={{ whiteSpace: 'nowrap' }}>{user.phone || '—'}</TableCell>
                 <TableCell sx={{ overflowWrap: 'anywhere' }}>{user.email || '—'}</TableCell>
-                <TableCell><Chip size="small" variant="outlined" color={user.is_active ? 'success' : 'default'} label={user.is_active ? 'Разрешён' : 'Отключён'} /></TableCell>
-                <TableCell>{user.can_edit ? <Button size="small" onClick={() => open(user)}>Редактировать</Button> : <Typography variant="caption" color="text.secondary">Только просмотр</Typography>}</TableCell>
+                <TableCell><Chip size="small" variant="outlined" color={user.is_active && user.status === 'active' ? 'success' : 'default'} label={user.is_active && user.status === 'active' ? 'Разрешён' : 'Отключён'} /></TableCell>
+                <TableCell>{user.can_edit ? <Stack direction="row" spacing={1}>
+                  <Button size="small" onClick={() => open(user)}>Редактировать</Button>
+                  <Button size="small" color={archived ? 'primary' : 'warning'} onClick={() => { setArchiveError(''); setArchiveTarget(user); }}>{archived ? 'Восстановить' : 'В архив'}</Button>
+                </Stack> : <Typography variant="caption" color="text.secondary">Только просмотр</Typography>}</TableCell>
               </TableRow>)}
         </TableBody>
       </Table>
@@ -109,6 +132,15 @@ export default function UsersPage() {
         </Stack></DialogContent>
         <DialogActions><Button disabled={saving} onClick={() => setEditing(undefined)}>Отмена</Button><Button type="submit" variant="contained" disabled={saving}>{saving ? 'Сохранение…' : 'Сохранить'}</Button></DialogActions>
       </Box>
+    </Dialog>
+    <Dialog open={!!archiveTarget} onClose={() => { if (!saving) setArchiveTarget(null); }} fullWidth maxWidth="xs">
+      <DialogTitle>{archiveTarget?.status === 'dismissed' ? 'Восстановить сотрудника?' : 'Переместить в архив?'}</DialogTitle>
+      <DialogContent><Stack spacing={2}>
+        <Typography>{archiveTarget && (`${archiveTarget.last_name} ${archiveTarget.first_name}`.trim() || archiveTarget.username)}</Typography>
+        <Typography>{archiveTarget?.status === 'dismissed' ? 'Сотрудник вернётся в действующий список и сможет входить с прежним паролем.' : 'Вход будет отключён. История смен и выполненных работ сохранится.'}</Typography>
+        {archiveError && <Alert severity="error">{archiveError}</Alert>}
+      </Stack></DialogContent>
+      <DialogActions><Button disabled={saving} onClick={() => setArchiveTarget(null)}>Отмена</Button><Button variant="contained" disabled={saving} onClick={changeArchive}>{saving ? 'Сохранение…' : archiveTarget?.status === 'dismissed' ? 'Восстановить' : 'В архив'}</Button></DialogActions>
     </Dialog>
   </Stack>;
 }
